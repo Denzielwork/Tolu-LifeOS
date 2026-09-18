@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>T.O.L.U. | Tracker of Objectives, Legacy &amp; Understanding</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="wakandan-bg min-h-screen overflow-x-hidden">
+
+  <!-- ============================================ BACKGROUND CANVAS -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- ============================================ HOLOGRAM FACE (JARVIS LAYER) -->
+  <div id="hologram-layer">
+    <svg class="face" viewBox="-100 -120 200 240" id="face-svg" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="faceGlow" cx="50%" cy="40%" r="55%">
+          <stop offset="0%"   stop-color="#DC143C" stop-opacity="0.22"/>
+          <stop offset="70%"  stop-color="#DC143C" stop-opacity="0.05"/>
+          <stop offset="100%" stop-color="#DC143C" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="0" cy="0" r="115" fill="url(#faceGlow)"/>
+
+      <path d="M -60 -30 Q -62 -95 -30 -112 Q 0 -124 30 -112 Q 62 -95 60 -30 L 60 30 Q 56 72 30 98 Q 0 118 -30 98 Q -56 72 -60 30 Z"
+            fill="none" stroke="#DC143C" stroke-width="1.8" stroke-linejoin="round"/>
+
+      <path d="M -54 -40 Q -36 -50 -18 -42" fill="none" stroke="#DC143C" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M 18 -42 Q 36 -50 54 -40"  fill="none" stroke="#DC143C" stroke-width="2.4" stroke-linecap="round"/>
+
+      <ellipse cx="-34" cy="-22" rx="13" ry="7" fill="none" stroke="#DC143C" stroke-width="1.4"/>
+      <circle cx="-34" cy="-22" r="3.6" fill="#DC143C"/>
+      <circle cx="-34" cy="-22" r="7" fill="none" stroke="#DC143C" stroke-width="0.5" opacity="0.4"/>
+      <ellipse cx="34" cy="-22" rx="13" ry="7" fill="none" stroke="#DC143C" stroke-width="1.4"/>
+      <circle cx="34" cy="-22" r="3.6" fill="#DC143C"/>
+      <circle cx="34" cy="-22" r="7" fill="none" stroke="#DC143C" stroke-width="0.5" opacity="0.4"/>
+
+      <path d="M 0 -12 L -2 18 Q 0 26 8 24" fill="none" stroke="#DC143C" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M -10 26 Q 0 32 10 26"       fill="none" stroke="#DC143C" stroke-width="1.3" stroke-linecap="round"/>
+
+      <path id="mouth" d="M -24 55 Q 0 60 24 55" fill="none" stroke="#DC143C" stroke-width="2.2" stroke-linecap="round"/>
+
+      <path d="M -56 -2 Q -50 22 -38 38" fill="none" stroke="#DC143C" stroke-width="0.7" opacity="0.35"/>
+      <path d="M 56 -2 Q 50 22 38 38"    fill="none" stroke="#DC143C" stroke-width="0.7" opacity="0.35"/>
+
+      <path d="M -56 28 Q -50 62 -30 90" fill="none" stroke="#DC143C" stroke-width="0.9" opacity="0.5"/>
+      <path d="M 56 28 Q 50 62 30 90"    fill="none" stroke="#DC143C" stroke-width="0.9" opacity="0.5"/>
+
+      <path d="M -44 -78 Q 0 -88 44 -78" fill="none" stroke="#DC143C" stroke-width="0.6" opacity="0.4"/>
+      <path d="M -48 -66 Q 0 -74 48 -66" fill="none" stroke="#DC143C" stroke-width="0.4" opacity="0.25"/>
+    </svg>
+  </div>
+
+  <div id="voice-status">STANDBY</div>
+  <div id="voice-transcript"></div>
+
+  <!-- ============================================ LOCK SCREEN -->
+  <div id="lock-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-transparent transition-opacity duration-1000">
+    <div id="lock-content" class="text-center transition-opacity duration-500">
+      <h2 class="font-tech text-2xl text-white tracking-widest mb-4 glow-red">SYSTEM LOCKED</h2>
+      <p class="text-xs font-tech text-[#DC143C] tracking-widest uppercase mb-4">Enter 6-Digit Passcode</p>
+      <input type="password" id="pin-input" maxlength="6"
+             class="text-center text-3xl tracking-[0.5em] bg-transparent border-b-2 border-[#DC143C] text-white focus:outline-none w-64 font-tech shadow-none p-2"
+             autocomplete="off" />
+    </div>
+    <div id="greeting-content" class="hidden absolute inset-0 flex items-center justify-center transition-opacity duration-500">
+      <h1 class="font-tech text-5xl md:text-7xl text-white font-bold tracking-widest glow-red animate-pulse uppercase">HI, DENZIEL</h1>
+    </div>
+  </div>
+
+  <!-- ============================================ SETTINGS MODAL -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-[#0A0A0A]/90 backdrop-blur-md p-4">
+    <div class="glass-card rounded-2xl p-6 border-glow w-full max-w-md relative">
+      <div class="flex items-center justify-between border-b border-[#DC143C]/30 pb-3 mb-4">
+        <h2 class="font-tech text-xl text-white font-bold tracking-wider">SYSTEM CONFIG</h2>
+        <button onclick="closeSettingsModal()" class="text-[#DC143C] hover:text-white text-lg cursor-pointer">✕</button>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="text-xs font-tech uppercase tracking-wider text-[#D3D3D3]/80 block mb-1">Gemini API Key</label>
+          <input type="password" id="setting-gemini-key" placeholder="AIzaSy..." autocomplete="off">
+        </div>
+        <div>
+          <label class="text-xs font-tech uppercase tracking-wider text-[#D3D3D3]/80 block mb-1">Hevy API Key (Pro)</label>
+          <input type="password" id="setting-hevy-key" placeholder="Hevy Pro API key..." autocomplete="off">
+        </div>
+        <p class="text-[10px] text-[#D3D3D3]/60 italic">
+          Keys are stored locally in your browser. They are only sent to their respective APIs when you trigger a fetch.
+        </p>
+      </div>
+      <div class="mt-6">
+        <button onclick="saveSettings()"
+                class="w-full py-2 text-xs font-tech uppercase bg-[#DC143C]/20 border border-[#DC143C]/50 rounded hover:bg-[#DC143C]/40 transition-all text-white cursor-pointer">
+          SAVE CONFIGURATION
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ MAIN DASHBOARD -->
+  <div id="main-dashboard" class="hidden opacity-0 transition-opacity duration-1000 flex-col p-4 md:p-6 w-full relative z-10">
+
+    <!-- HEADER -->
+    <header class="w-full max-w-7xl mx-auto glass-card rounded-2xl border-glow mb-6 overflow-hidden">
+      <div class="flex flex-col lg:flex-row items-center justify-between p-4 gap-4 border-b border-[#DC143C]/30">
+        <div class="flex items-center space-x-3">
+          <div class="w-3 h-3 bg-[#DC143C] rounded-full animate-ping"></div>
+          <div>
+            <h1 class="text-xl md:text-2xl font-bold tracking-widest text-white uppercase glow-red">
+              T.O.L.U. <span class="text-[#DC143C]">|</span> DENZIEL ARMAH
+            </h1>
+            <p class="text-[10px] font-tech text-[#DC143C] tracking-[0.25em] uppercase mt-0.5">
+              Tracker of Objectives, Legacy &amp; Understanding
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 flex-wrap justify-center">
+          <span id="live-clock"
+                class="text-xs font-tech text-[#D3D3D3] tracking-widest border border-[#D3D3D3]/20 px-3 py-1 rounded bg-[#1A1A1A]">
+            --:--:-- UTC
+          </span>
+
+          <div class="flex flex-col items-end leading-tight">
+            <span class="text-[9px] font-tech uppercase tracking-widest text-[#D3D3D3]/60">Momentum</span>
+            <span id="streak-counter" class="font-tech font-bold text-[#DC143C] text-sm glow-red">1 Day</span>
+          </div>
+
+          <div class="w-28">
+            <div class="flex justify-between text-[10px] mb-1 font-tech uppercase tracking-widest">
+              <span class="text-[#D3D3D3]/70">LVL <span id="level-badge" class="text-[#DC143C] font-bold">1</span></span>
+              <span id="xp-text" class="text-[#DC143C] font-mono">0 / 100</span>
+            </div>
+            <div class="w-full bg-[#0A0A0A] rounded-full h-1.5 border border-[#DC143C]/30 overflow-hidden">
+              <div id="xp-bar"
+                   class="bg-gradient-to-r from-[#DC143C] to-[#ff4d6d] h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(220,20,60,0.8)]"
+                   style="width: 0%"></div>
+            </div>
+          </div>
+
+          <button id="voice-toggle-btn" onclick="toggleVoice()"
+                  class="text-xs font-tech tracking-wider uppercase bg-[#1A1A1A] hover:bg-[#DC143C]/20 border border-[#DC143C]/50 text-white px-3 py-1 rounded transition-all cursor-pointer">
+            🎙️ VOICE
+          </button>
+
+          <button onclick="openSettingsModal()"
+                  class="text-xs font-tech tracking-wider uppercase bg-[#1A1A1A] hover:bg-[#D3D3D3]/20 border border-[#D3D3D3]/50 text-[#D3D3D3] px-3 py-1 rounded transition-all cursor-pointer"
+                  title="Settings">⚙️</button>
+        </div>
+      </div>
+
+      <nav class="flex gap-2 overflow-x-auto px-4 py-3 text-xs font-tech font-bold tracking-widest uppercase">
+        <button class="nav-btn active-tab"   data-tab="dashboard"  onclick="switchTab('dashboard')">Dashboard</button>
+        <button class="nav-btn inactive-tab" data-tab="career"     onclick="switchTab('career')">Career</button>
+        <button class="nav-btn inactive-tab" data-tab="finance"    onclick="switchTab('finance')">Finance</button>
+        <button class="nav-btn inactive-tab" data-tab="fitness"    onclick="switchTab('fitness')">Fitness &amp; Body</button>
+        <button class="nav-btn inactive-tab" data-tab="mental"     onclick="switchTab('mental')">Mental Health</button>
+        <button class="nav-btn inactive-tab" data-tab="braindump"  onclick="switchTab('braindump')">AI Core</button>
+      </nav>
+    </header>
+
+    <!-- MAIN -->
+    <main class="w-full max-w-7xl mx-auto space-y-6 relative z-10">
+
+      <!-- DASHBOARD -->
+      <section id="tab-dashboard" class="tab-content active space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-2 glass-card rounded-2xl p-6 border-glow flex flex-col justify-center">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xs font-tech font-bold uppercase tracking-widest text-[#DC143C] glow-red">Primary Objective</h2>
+              <span class="text-[10px] font-tech text-[#D3D3D3]/50 uppercase tracking-wider">Combats Initiation Paralysis</span>
+            </div>
+            <input id="single-win-input" type="text"
+                   placeholder="Declare your single critical objective for today..."
+                   class="w-full rounded-lg p-4 text-lg font-medium mb-4" />
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <button onclick="completeSingleWin()"
+                      class="bg-[#DC143C]/20 text-white border border-[#DC143C]/50 hover:bg-[#DC143C]/40 text-xs font-tech font-bold uppercase tracking-widest px-6 py-2.5 rounded transition-all cursor-pointer">
+                Execute Objective (+30 XP)
+              </button>
+              <span id="win-status" class="text-xs text-emerald-400 font-tech font-bold uppercase tracking-widest"></span>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6 border-glow flex flex-col justify-between items-center text-center">
+            <h2 class="text-[10px] font-tech font-bold uppercase tracking-widest text-[#D3D3D3]/80 mb-2">Temporal Interrupt</h2>
+            <div id="timer-display"
+                 class="text-5xl font-tech font-light tracking-tight text-[#DC143C] my-4 glow-red"
+                 style="font-variant-numeric: tabular-nums;">20:00</div>
+            <p class="text-[9px] font-tech text-[#D3D3D3]/50 uppercase tracking-widest mb-4">Prevents routing table saturation</p>
+            <div class="flex gap-3 w-full">
+              <button id="timer-toggle-btn" onclick="toggleTimer()"
+                      class="flex-1 bg-[#DC143C]/20 border border-[#DC143C]/50 hover:bg-[#DC143C]/40 text-white py-2 rounded text-xs font-tech font-bold uppercase tracking-widest transition-all cursor-pointer">Initiate</button>
+              <button onclick="resetTimer()"
+                      class="flex-1 bg-[#1A1A1A]/40 border border-[#D3D3D3]/30 hover:bg-[#D3D3D3]/10 text-[#D3D3D3] py-2 rounded text-xs font-tech font-bold uppercase tracking-widest transition-all cursor-pointer">Abort</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass-card rounded-2xl p-6 border-glow">
+            <h2 class="text-xs font-tech font-bold uppercase tracking-widest text-[#DC143C] mb-4 glow-red">Momentum Protocols</h2>
+            <div id="dashboard-habits-list" class="space-y-3"></div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6 border-glow flex flex-col">
+            <div class="mb-4">
+              <h2 class="text-xs font-tech font-bold uppercase tracking-widest text-[#DC143C] glow-red">Legacy Log</h2>
+              <p class="text-[10px] font-tech text-[#D3D3D3]/50 uppercase tracking-widest mt-1">Record non-productivity behavioral wins</p>
+            </div>
+            <div class="flex gap-2 mb-4">
+              <input id="evidence-input" type="text" placeholder="e.g., Regulated my emotional response successfully..." class="flex-1 rounded p-2 text-sm" />
+              <button onclick="addEvidence()"
+                      class="bg-[#DC143C]/20 border border-[#DC143C]/50 hover:bg-[#DC143C]/40 text-white text-xs font-tech uppercase tracking-widest px-4 py-2 rounded transition-all cursor-pointer">Log</button>
+            </div>
+            <ul id="evidence-list" class="space-y-2 text-xs text-[#D3D3D3] overflow-y-auto flex-1 max-h-48 pr-2"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- CATEGORY VIEW (career / mental) -->
+      <section id="tab-category-view" class="tab-content">
+        <div class="glass-card rounded-2xl p-6 border-glow">
+          <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+            <div>
+              <h2 id="category-title" class="text-2xl font-tech text-[#DC143C] glow-red capitalize">Category</h2>
+              <p class="text-[10px] font-tech uppercase tracking-widest text-[#D3D3D3]/50 mt-1">Domain Specific Protocols</p>
+            </div>
+            <button onclick="promptNewCategoryItem()"
+                    class="bg-[#DC143C]/20 border border-[#DC143C]/50 hover:bg-[#DC143C]/40 text-white text-xs font-tech font-bold uppercase tracking-widest px-4 py-2 rounded transition-all cursor-pointer">+ Add Protocol</button>
+          </div>
+          <div id="category-items-list" class="grid gap-3"></div>
+        </div>
+      </section>
+
+      <!-- FINANCE -->
+      <section id="tab-finance" class="tab-content space-y-6">
+
+        <!-- DEBT COMMAND HERO -->
+        <div class="glass-card rounded-2xl p-6 border-glow">
+          <div class="flex items-center justify-between border-b border-[#DC143C]/30 pb-3 mb-5 flex-wrap gap-2">
+            <div>
+              <h2 class="font-tech text-xl text-white font-bold tracking-wider">DEBT COMMAND</h2>
+              <p class="text-[11px] font-tech text-[#D3D3D3]/60 mt-1">Attack order · income simulator · payoff roadmap.</p>
+            </div>
+            <span class="text-xs text-[#DC143C] font-mono">LIVE</span>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            <div class="health-metric">
+              <div class="metric-label">NET WORTH</div>
+              <div class="metric-value" id="fin-net-worth">--</div>
+              <div class="metric-sub" id="fin-net-worth-sub">Cash − debts</div>
+            </div>
+            <div class="health-metric">
+              <div class="metric-label">TOTAL DEBT</div>
+              <div class="metric-value" id="fin-total-debt">--</div>
+              <div class="metric-sub" id="fin-total-debt-sub">Across 5 accounts</div>
+            </div>
+            <div class="health-metric">
+              <div class="metric-label">MONTHLY SURPLUS</div>
+              <div class="metric-value" id="fin-surplus">--</div>
+              <div class="metric-sub">After TfL + snacks</div>
+            </div>
+            <div class="health-metric">
+              <div class="metric-label">DEBT-FREE IN</div>
+              <div class="metric-value" id="fin-months">--</div>
+              <div class="metric-sub">At current pace</div>
+            </div>
+          </div>
+
+          <div class="mb-2 flex justify-between text-[10px] font-tech uppercase tracking-widest">
+            <span class="text-[#D3D3D3]/70">Debt Eliminated</span>
+            <span id="fin-progress-pct" class="text-[#DC143C] font-mono">0%</span>
+          </div>
+          <div class="w-full h-4 bg-[#0A0A0A] rounded-full overflow-hidden border border-[#DC143C]/30">
+            <div id="fin-progress-bar"
+                 class="h-full bg-gradient-to-r from-[#DC143C] to-[#ff4d6d] transition-all duration-500 shadow-[0_0_12px_rgba(220,20,60,0.7)]"
+                 style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- INCOME SIMULATOR + XP -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <div class="lg:col-span-2 glass-card rounded-2xl p-6 border-glow">
+            <h2 class="text-xs font-tech font-bold uppercase tracking-widest text-[#DC143C] mb-4 glow-red">Income Simulator</h2>
+
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <div class="flex items-center gap-2">
+                <label class="text-[10px] font-tech uppercase tracking-widest text-[#D3D3D3]/70">Days per week</label>
+                <input type="range" id="fin-days-slider" min="4" max="7" value="5" step="1" class="w-40 cursor-pointer">
+                <span id="fin-days-value" class="font-tech font-bold text-[#DC143C] text-lg w-8 text-center">5</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-[10px] font-tech uppercase tracking-widest text-[#D3D3D3]/70">Daily £</label>
+                <input type="number" id="fin-daily-rate" value="50" min="1" step="1" class="w-20">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="health-metric">
+                <div class="metric-label">MONTHLY INCOME</div>
+                <div class="metric-value" id="fin-income">--</div>
+                <div class="metric-sub" id="fin-income-days">~21.7 days</div>
+              </div>
+              <div class="health-metric">
+                <div class="metric-label">TfL</div>
+                <div class="metric-value">£<span id="fin-tfl">84.50</span></div>
+                <div class="metric-sub">Bus pass / month</div>
+              </div>
+              <div class="health-metric">
+                <div class="metric-label">SNACKS</div>
+                <div class="metric-value">£<span id="fin-snacks">20</span></div>
+                <div class="metric-sub">Cap it</div>
+              </div>
+              <div class="health-metric">
+                <div class="metric-label">AVAILABLE</div>
+                <div class="metric-value" id="fin-available">--</div>
+                <div class="metric-sub">For debt payments</div>
+              </div>
+            </div>
+
+            <p class="text-[10px] font-tech text-[#D3D3D3]/50 mt-4 italic">
+              Slider adjusts days per week. Income = £/day × days × 4.33 weeks. Everything cascades.
+            </p>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6 border-glow">
+            <h2 class="text-xs font-tech font-bold uppercase tracking-widest text-[#DC143C] mb-4 glow-red">Debt XP</h2>
+
+            <div class="text-center mb-4">
+              <div class="text-4xl font-tech font-bold text-white glow-red" id="fin-xp">0</div>
+              <div class="text-[10px] font-tech uppercase tracking-widest text-[#DC143C] mt-1" id="fin-level">Debt Rookie</div>
+            </div>
+
+            <div class="w-full bg-[#0A0A0A] rounded-full h-1.5 border border-[#DC143C]/30 overflow-hidden mb-3">
+              <div id="fin-xp-bar"
+                   class="bg-gradient-to-r from-[#DC143C] to-[#ff4d6d] h-full transition-all duration-500"
+                   style="width: 0%"></div>
+            </div>
+
+            <div class="flex justify-between text-[10px] font-tech uppercase tracking-widest text-[#D3D3D3]/60 mb-4">
+              <span id="fin-xp-next">500 to Slayer</span>
+              <span id="fin-streak">0 day streak</span>
+            </div>
+
+            <div class="space-y-1 text-[10px] font-tech uppercase tracking-widest">
+              <div class="flex justify-between text-[#D3D3D3]/70"><span>Daily check-in</span><span class="text-[#DC143C]">+10 XP</span></div>
+              <div class="flex justify-between text-[#D3D3D3]/70"><span>Work day</span><span class="text-[#DC143C]">+20 XP</span></div>
+              <div class="flex justify-between text-[#D3D3D3]/70"><span>Any debt payment</span><span class="text-[#DC143C]">+50 XP</span></div>
+              <div class="flex justify-between text-[#D3D3D3]/70"><span>Extra payment</span><span class="text-[#DC143C]">+100 XP</span></div>
+              <div class="flex justify-between text-[#D3D3D3]/70"><span>No-spend day</span><span class="text-[#DC143C]">+25 XP</span></div>
+              <div class="flex justify-between text-[#D3D3D3]/70"><span>Clear a debt</span><span class="text-[#DC143C]">+500 XP</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROADMAP -->
+        <div class="glass-card rounded-2xl p-6 border-glow">
+          <div class="flex items-center justify-between border-b border-[#DC143C]/30 pb-3 mb-5">
+            <div>
+              <h2 class="font-tech text-xl text-white font-bold tracking-wider">PAYOFF ROADMAP</h2>
+              <p class="text-[11px] font-tech text-[#D3D3D3]/60 mt-1">Attack order: Capital One → Rent → NatWest → Metro → Other.</p>
+            </div>
+            <span class="text-xs text-[#DC143C] font-mono" id="fin-account-count">5 ACCOUNTS</span>
+          </div>
+          <div id="fin-accounts-list" class="space-y-3"></div>
+        </div>
+
+        <!-- MONTHLY PLANNER + CHART -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          <div class="glass-card rounded-2xl p-6 border-glow">
+            <div class="flex items-center justify-between border-b border-[#DC143C]/30 pb-3 mb-5">
+              <div>
+                <h2 class="font-tech text-lg text-white font-bold tracking-wider">MONTHLY PLAN</h2>
+                <p class="text-[11px] font-tech text-[#D3D3D3]/60 mt-1">Edit payments per account each month. Everything recalculates live.</p>
+              </div>
+            </div>
+            <div id="fin-planner" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
+
+            <button onclick="finAddMonth()"
+                    class="w-full mt-4 py-2 text-xs font-tech uppercase bg-[#DC143C]/20 border border-[#DC143C]/50 rounded hover:bg-[#DC143C]/40 transition-all text-white cursor-pointer">
+              + Add Next Month
+            </button>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6 border-glow">
+            <div class="flex items-center justify-between border-b border-[#DC143C]/30 pb-3 mb-5">
+              <div>
+                <h2 class="font-tech text-lg text-white font-bold tracking-wider">DEBT TRAJECTORY</h2>
+                <p class="text-[11px] font-tech text-[#D3D3D3]/60 mt-1">Projected total debt over the next 12 months.</p>
+              </div>
+            </div>
+            <div class="relative w-full h-64">
+              <svg id="fin-chart" class="w-full h-full" viewBox="0 0 400 220" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="flex justify-between text-[10px] font-tech uppercase tracking-widest text-[#D3D3D3]/50 mt-2">
+              <span>Now</span><span>+6 mo</span><span>+12 mo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DAILY CHECK-IN -->
+        <div class="glass-card rounded-2xl p-6 border-glow">
+          <div class="flex items-center justify-between border-b border-[#DC143C]/30 pb-3 mb-5">
+            <div>
+              <h2 class="font-tech text-xl text-white font-bold tracking-wider">DAILY CHECK-IN</h2>
+              <p class="text-[11px] font-tech text-[#D3D3D3]/60 mt-1">30 seconds. Log work, spend, payments. Earn XP.</p>
+            </div>
+            <span id="fin-checkin-date" class="text-xs text-[#DC143C] font-mono">--</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <label class="flex flex-col gap-1">
+              <span class="text-[10px] font-tech uppercase tracking-widest text-[#D3D3D3]/70">Worked today?</span>
+              <select id="fin-worked" class="text-xs">
+                <option value="no">No</option>
+                <option value="yes">Yes (£50)</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span class="text-[10px] font-tech uppercase tracking-widest text-[#D3D3D3]/70">Snacks £</span>
+              <input type="number" id="fin-spent" value="0" min="0" step="0.01">
+            </label>
+            <label class="flex flex-col gap-1">
+              <span class="text-[10px] font-tech uppercase tracking-widest text-[#D3D3D3]/70">Paid to debt £</span>
+              <input type="number" id="fin-paid-today" value="0" min="0" step="0.01">
+            </label>
+            <div class="flex items-end">
+              <button onclick="finLogDay()"
+                      class="w-full py-2 text-xs font-tech uppercase bg-[#DC143C]/20 border border-[#DC143C]/50 rounded hover:bg-[#DC143C]/40 transition-all text-white cursor-pointer">
+                Log Day + XP
+              </button>
+            </div>
+          </div>
+
+          <div id="fin-checkin-feed" class="space-y-2 max-h-48 overflow-y-auto text-xs"></div>
+        </div>
+
+      </section>
+
+      <!-- FITNESS & BODY (FUSED) -->
+      <section id="tab-fitness" class="tab-content space-y-6">
+        <div class="glass-card rounded-2xl p-6 border-glow">
+          <div class="flex items-center justify-between border-b border-[#DC143C]/30 pb-3 mb-6">
+            <div>
+              <h2 class="font-tech text-xl text-white font-bold tracking-wider">HEALTH SYNC</h2>
+              <p class="text-[11px] font-tech text-[#D3D3D3]/60 mt-1">Import your Apple Health export. Everything parses locally — nothing leaves this browser.</p>
+            </div>
+            <span id="health-sync-status" class="text-xs text-[#DC143C] font-mono">NO DATA</span>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+            <div class="flex flex-col items-center justify-center relative">
+              <div class="absolute w-40 h-40 rounded-full bg-[#DC143C]/10 blur-3xl pointer-events-none"></div>
+
+              <svg viewBox="0 0 200 260" class="w-40 h-52 relative z-10 drop-shadow-[0_0_18px_rgba(220,20,60,0.55)]">
+                <path d="M65 30 L65 12 Q65 2 75 2 L125 2 Q135 2 135 12 L135 30" stroke="#DC143C" stroke-width="2" fill="none" opacity="0.5"/>
+                <path d="M65 230 L65 248 Q65 258 75 258 L125 258 Q135 258 135 248 L135 230" stroke="#DC143C" stroke-width="2" fill="none" opacity="0.5"/>
+                <rect x="40" y="30" width="120" height="200" rx="30" fill="#1A1A1A" stroke="#DC143C" stroke-width="1.5"/>
+                <rect x="52" y="42" width="96" height="176" rx="22" fill="#0A0A0A"/>
+                <rect x="160" y="108" width="7" height="34" rx="3" fill="#DC143C"/>
+                <circle cx="100" cy="115" r="32" stroke="#DC143C" stroke-width="5" fill="none" stroke-dasharray="170 31" stroke-linecap="round"/>
+                <circle cx="100" cy="115" r="22" stroke="#D3D3D3" stroke-width="3" fill="none" opacity="0.25"/>
+                <text x="100" y="120" font-family="Rajdhani, sans-serif" font-size="16" fill="#ffffff" text-anchor="middle" font-weight="700">54</text>
+                <text x="100" y="134" font-family="Rajdhani, sans-serif" font-size="7" fill="#DC143C" text-anchor="middle" letter-spacing="2">BPM</text>
+                <text x="100" y="170" font-family="Rajdhani, sans-serif" font-size="8" fill="#D3D3D3" text-anchor="middle" letter-spacing="1">11,204 STEPS</text>
+                <text x="100" y="184" font-family="Rajdhani, sans-serif" font-size="8" fill="#D3D3D3" text-anchor="middle" letter-spacing="1">7h 42m SLEEP</text>
+                <text x="100" y="198" font-family="Rajdhani, sans-serif" font-size="8" fill="#D3D3D3" text-anchor="middle" letter-spacing="1">684 kcal</text>
+              </svg>
+
+              <div class="mt-4 flex items-center gap-2 relative z-10">
+                <span class="w-2 h-2 rounded-full bg-[#DC143C] shadow-[0_0_8px_#DC143C] pulse-dot"></span>
+                <span class="text-[10px] font-tech uppercase tracking-[0.25em] text-[#DC143C] glow-red text-center">Extracting Data From This Device</span>
+                <span class="w-2 h-2 rounded-full bg-[#DC143C] shadow-[0_0_8px_#DC143C] pulse-dot"></span>
+              </div>
+
+              <div class="mt-5 flex flex-col sm:flex-row gap-2 w-full relative z-10">
+                <input type="file" id="health-file-input" accept=".xml,.json" class="hidden">
+                <button onclick="document.getElementById('health-file-input').click()"
+                        class="flex-1 py-2 text-xs font-tech uppercase bg-[#DC143C]/20 border border-[#DC143C]/50 rounded hover:bg-[#DC143C]/40 transition-all text-white cursor-pointer">Import Apple Health</button>
+                <button onclick="clearHealthData()"
+                        class="px-4 py-2 text-xs font-tech uppercase bg-[#1A1A1A] border border-[#D3D3D3]/30 rounded hover:bg-[#D3D3D3]/10 transition-all cursor-pointer">Clear</button>
+              </div>
+            </div>
+
+            <div class="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div class="health-metric">
+                <div class="metric-label">SLEEP</div>
+                <div class="metric-value"><span id="metric-sleep">--</span><span class="metric-unit">h</span></div>
+                <div class="metric-sub" id="metric-sleep-sub">Deep / REM breakdown</div>
+              </div>
+              <div class="health-metric">
+                <div class="metric-label">STEPS</div>
+                <div class="metric-value"><span id="metric-steps">--</span></div>
+                <div class="metric-sub" id="metric-steps-sub">Goal: 10,000</div>
+              </div>
+              <div class="health-metric">
+                <div class="metric-label">ACTIVE ENERGY</div>
+                <div class="metric-value"><span id="metric-energy">--</span><span class="metric-unit">kcal</span></div>
+                <div class="metric-sub" id="metric-energy-sub">Burned today</div>
+              </div>
+              <div class="health-metric">
+                <div class="metric-label">RESTING HR</div>
+                <div class="metric-value"><span id="metric-rhr">--</span><span class="metric-unit">bpm</span></div>
+                <div class="metric-sub" id="metric-rhr-sub">Lower = better recovery</div>
+              </div>
+              <div class="health-metric">
+                <div class="metric-label">HRV</div>
+                <div class="metric-value"><span id="metric-hrv">--</span><span class="metric-unit">ms</span></div>
+                <div class="metric-sub" id="metric-hrv-sub">Autonomic balance</div>
+              </div>
+              <div class="health-metric">
+                <div class="metric-label">RECOVERY</div>
+                <div class="metric-value"><span id="metric-recovery">--</span><span class="metric-unit">%</span></div>
+                <div class="metric-sub" id="metric-recovery-sub">Derived from sleep + HRV</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6 border-glow">
+          <div class="flex items-center justify-between border-b border-[#DC143C]/30 pb-3 mb-5 flex-wrap gap-2">
+            <div>
+              <h2 class="font-tech text-xl text-white font-bold tracking-wider">HEVY WORKOUT SYNC</h2>
+              <p class="text-[11px] font-tech text-[#D3D3D3]/60 mt-1">Import CSV export (free) or fetch live via Hevy Pro API.</p>
+            </div>
+            <span id="hevy-sync-status" class="text-xs text-[#DC143C] font-mono">NO DATA</span>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            <div class="health-metric">
+              <div class="metric-label">TOTAL WORKOUTS</div>
+              <div class="metric-value"><span id="hevy-total-workouts">0</span></div>
+              <div class="metric-sub">All time</div>
+            </div>
+            <div class="health-metric">
+              <div class="metric-label">TOTAL VOLUME</div>
+              <div class="metric-value"><span id="hevy-total-volume">0</span><span class="metric-unit">kg</span></div>
+              <div class="metric-sub">Weight × reps</div>
+            </div>
+            <div class="health-metric">
+              <div class="metric-label">TOTAL SETS</div>
+              <div class="metric-value"><span id="hevy-total-sets">0</span></div>
+              <div class="metric-sub">Logged sets</div>
+            </div>
+            <div class="health-metric">
+              <div class="metric-label">LAST SESSION</div>
+              <div class="metric-value" style="font-size:1.1rem"><span id="hevy-last-session">--</span></div>
+              <div class="metric-sub" id="hevy-last-session-sub">No workouts</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+            <div class="flex gap-2">
+              <input type="file" id="hevy-csv-input" accept=".csv" class="hidden">
+              <button onclick="document.getElementById('hevy-csv-input').click()"
+                      class="flex-1 py-2 text-xs font-tech uppercase bg-[#DC143C]/20 border border-[#DC143C]/50 rounded hover:bg-[#DC143C]/40 transition-all text-white cursor-pointer">Import Hevy CSV</button>
+              <button onclick="clearHevyData()"
+                      class="px-4 py-2 text-xs font-tech uppercase bg-[#1A1A1A] border border-[#D3D3D3]/30 rounded hover:bg-[#D3D3D3]/10 transition-all cursor-pointer">Clear</button>
+            </div>
+            <div class="flex gap-2">
+              <input type="password" id="hevy-inline-key" placeholder="Hevy Pro API key..." class="flex-1">
+              <button onclick="fetchHevyWorkouts()"
+                      class="px-4 py-2 text-xs font-tech uppercase bg-[#DC143C]/20 border border-[#DC143C]/50 rounded hover:bg-[#DC143C]/40 transition-all text-white cursor-pointer">Fetch Live</button>
+            </div>
+          </div>
+
+          <div class="border-t border-[#DC143C]/20 pt-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-tech text-sm text-white tracking-wider">RECENT WORKOUTS</h3>
+              <span id="hevy-feed-count" class="text-[10px] text-[#DC143C] font-mono">0 LOGGED</span>
+            </div>
+            <div id="hevy-workout-feed" class="space-y-2 max-h-72 overflow-y-auto text-xs"></div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6 border-glow">
+          <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+            <div>
+              <h2 class="text-2xl font-tech text-[#DC143C] glow-red capitalize">Fitness Protocols</h2>
+              <p class="text-[10px] font-tech uppercase tracking-widest text-[#D3D3D3]/50 mt-1">Domain Specific Habits</p>
+            </div>
+            <button onclick="promptNewFitnessProtocol()"
+                    class="bg-[#DC143C]/20 border border-[#DC143C]/50 hover:bg-[#DC143C]/40 text-white text-xs font-tech font-bold uppercase tracking-widest px-4 py-2 rounded transition-all cursor-pointer">+ Add Protocol</button>
+          </div>
+          <div id="body-fitness-items-list" class="grid gap-3"></div>
+        </div>
+      </section>
+
+      <!-- AI CORE -->
+      <section id="tab-braindump" class="tab-content space-y-6">
+        <div class="glass-card rounded-2xl p-6 border-glow">
+          <h2 class="text-xl font-tech text-[#DC143C] glow-red mb-2">Cognitive Offloading (AI Core)</h2>
+          <p class="text-[10px] font-tech uppercase tracking-widest text-[#D3D3D3]/50 mb-6">Externalize chaotic thoughts. Gemini will structure data into logical routing paths.</p>
+
+          <textarea id="braindump-input" rows="5"
+                    placeholder="Dump raw thoughts here. E.g., 'Need to schedule dentist, review budget spreadsheet, clean the car, feeling exhausted...'"
+                    class="w-full rounded-lg p-4 text-sm mb-4 resize-none"></textarea>
+
+          <div class="flex justify-between items-center">
+            <span id="ai-loading" class="text-xs text-[#DC143C] hidden animate-pulse uppercase tracking-widest font-tech font-bold">Processing Neural Data...</span>
+            <button onclick="runGeminiBrainDump()"
+                    class="bg-[#DC143C]/20 border border-[#DC143C]/50 hover:bg-[#DC143C]/40 text-white text-xs font-tech font-bold uppercase tracking-widest px-6 py-2.5 rounded transition-all cursor-pointer ml-auto">Initialize Triage</button>
+          </div>
+        </div>
+
+        <div id="ai-output" class="hidden glass-card rounded-2xl p-6 border-glow">
+          <h3 class="text-xs font-tech font-bold uppercase tracking-widest text-[#DC143C] mb-4 glow-red">Structured Decomposition</h3>
+          <div id="ai-results" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="w-full max-w-7xl mx-auto mt-8 pt-4 border-t border-[#DC143C]/30 text-center relative z-10 mb-8">
+      <p class="text-sm md:text-base font-tech tracking-[0.25em] text-white uppercase glow-red">
+        BUILT BY DENZIEL <span class="text-[#DC143C]">.</span> FOR DENZIEL <span class="text-[#DC143C]">.</span> NO EXCUSES
+      </p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
